@@ -174,18 +174,18 @@ The service offers two authentication methods: Microsoft Entra ID and Access Tok
 
   - [Configure a federated identity credential on a user-assigned managed identity](/entra/workload-id/workload-identity-federation-create-trust-user-assigned-managed-identity) to trust tokens issued by GitHub Actions to your GitHub repository.
 
-  ##### Create GitHub secrets
+  ##### Configure GitHub workflow variables
 
-  -  Add the values you got in the previous step as secrets to your GitHub repository. See [set up GitHub Action Secret](/azure/developer/github/connect-from-azure-openid-connect?branch=main#create-github-secrets). These variables are used in the GitHub Action workflow in subsequent steps.
+  -  Configure the authentication values you got in the previous step for use in your GitHub Actions workflow. The Client ID, Subscription ID, and Tenant ID are not sensitive values and should be stored as environment variables in your workflow rather than as secrets.
 
-  | GitHub Secret       | Source (Microsoft Entra Application or Managed Identity) |
+  | Environment Variable | Source (Microsoft Entra Application or Managed Identity) |
   |---------------------|----------------------------------------------------------|
   | `AZURE_CLIENT_ID`    | Client ID                                                |
   | `AZURE_SUBSCRIPTION_ID` | Subscription ID                                       |
   | `AZURE_TENANT_ID`    | Directory (Tenant) ID                                    |
 
   > [!NOTE] 
-  > For enhanced security, it is strongly recommended to use GitHub Secrets to store sensitive values rather than including them directly in your workflow file.
+  > These values (Client ID, Subscription ID, and Tenant ID) are not sensitive and should be stored as environment variables in your workflow file rather than as GitHub secrets. GitHub Secrets should only be used for truly sensitive values like access tokens or passwords.
 
   # [Azure Pipelines](#tab/pipelines)
 
@@ -244,6 +244,11 @@ Update the CI workflow definition to run your Playwright tests with the Playwrig
         id-token: write
         contents: read
 
+      env:
+        AZURE_CLIENT_ID: '<your-client-id>'           # Client ID from Microsoft Entra Application or Managed Identity
+        AZURE_TENANT_ID: '<your-tenant-id>'           # Directory (Tenant) ID  
+        AZURE_SUBSCRIPTION_ID: '<your-subscription-id>' # Subscription ID
+
       jobs:
         test:
           timeout-minutes: 60
@@ -254,9 +259,9 @@ Update the CI workflow definition to run your Playwright tests with the Playwrig
             - name: Login to Azure with AzPowershell (enableAzPSSession true)
               uses: azure/login@v2
               with:
-                client-id: ${{ secrets.AZURE_CLIENT_ID }} # GitHub Open ID connect values copied in previous steps
-                tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-                subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+                client-id: ${{ env.AZURE_CLIENT_ID }} # GitHub workflow environment variables 
+                tenant-id: ${{ env.AZURE_TENANT_ID }}
+                subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
                 enable-AzPSSession: true
 
             - name: Install dependencies
@@ -338,6 +343,12 @@ Update the CI workflow definition to run your Playwright tests with the Playwrig
     permissions: # Required when using AuthType as EntraId
       id-token: write
       contents: read
+
+    env:
+      AZURE_CLIENT_ID: '<your-client-id>'           # Client ID from Microsoft Entra Application or Managed Identity
+      AZURE_TENANT_ID: '<your-tenant-id>'           # Directory (Tenant) ID  
+      AZURE_SUBSCRIPTION_ID: '<your-subscription-id>' # Subscription ID
+
     jobs:
       test:
         timeout-minutes: 60
@@ -350,9 +361,9 @@ Update the CI workflow definition to run your Playwright tests with the Playwrig
           - name: Login to Azure with AzPowershell (enableAzPSSession true) 
             uses: azure/login@v2 
             with: 
-              client-id: ${{ secrets.AZURE_CLIENT_ID }} # GitHub Open ID connect values copied in previous steps
-              tenant-id: ${{ secrets.AZURE_TENANT_ID }}  
-              subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}  
+              client-id: ${{ env.AZURE_CLIENT_ID }} # GitHub workflow environment variables
+              tenant-id: ${{ env.AZURE_TENANT_ID }}  
+              subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}  
               enable-AzPSSession: true 
           
           - name: Setup .NET
